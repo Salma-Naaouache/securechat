@@ -1,8 +1,9 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    id("com.google.gms.google-services") version "4.4.0" apply false
+    id("com.google.gms.google-services")
 }
+
 
 android {
     namespace = "com.student.securechat"
@@ -22,7 +23,8 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true //// Active l'obfuscation et la suppression du code inutile [cite: 123]
+            isShrinkResources = true /// Minifie les ressources [cite: 123]
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -41,6 +43,12 @@ android {
 dependencies {
     implementation(platform("com.google.firebase:firebase-bom:32.7.0"))
     implementation("com.google.firebase:firebase-analytics")
+    implementation("com.google.firebase:firebase-firestore-ktx")
+    implementation("com.google.firebase:firebase-auth-ktx")
+    implementation("androidx.biometric:biometric:1.2.0-alpha05") // Pour BiometricAuth.kt [cite: 29]
+    implementation("androidx.security:security-crypto:1.1.0-alpha06") // Pour SecureStorage.kt [cite: 34]
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2")
+    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.6.2")//Architecture (MVVM et Cycle de vie)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
