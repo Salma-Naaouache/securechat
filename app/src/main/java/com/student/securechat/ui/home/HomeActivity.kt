@@ -1,76 +1,48 @@
 package com.student.securechat.ui.home
 
 import android.os.Bundle
-import android.widget.ImageButton
-import android.widget.TextView
+import android.view.Menu         // Import manquant dans ton erreur
+import android.view.MenuItem     // Import manquant dans ton erreur
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.PopupMenu // Important pour le menu custom
+import androidx.appcompat.widget.Toolbar
 import com.student.securechat.R
-import com.student.securechat.data.local.SecureStorage
-import com.student.securechat.data.remote.AuthHelper
 
 class HomeActivity : AppCompatActivity() {
-
-    private lateinit var secureStorage: SecureStorage
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_home)
 
-        secureStorage = SecureStorage(this)
+        // Configuration de la Toolbar
+        val toolbar = findViewById<Toolbar>(R.id.toolbar)
+        setSupportActionBar(toolbar)
 
-        // 1. Display dynamic welcome name (safe and formatted)
-        val welcomeText = findViewById<TextView?>(R.id.txtWelcomeName)
-        val uid = AuthHelper.getCurrentUserId().orEmpty()
-        val storedName = secureStorage.getDisplayName(uid)
-            ?.removePrefix("User_")
-            ?.trim()
-            .let { name ->
-                when {
-                    name == null || name.isBlank() -> "Guest"
-                    else -> name.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
-                }
-            }
-        welcomeText?.text = storedName
-
-        // 2. Handle the "more" button if present; guard against missing view in layout
-        val btnMore = findViewById<ImageButton?>(R.id.btnMoreOptions)
-        btnMore?.setOnClickListener { view -> showPopupMenu(view) }
-        btnMore?.contentDescription = "More options"
+        // On retire le titre par défaut pour laisser le style personnalisé du XML
+        supportActionBar?.setDisplayShowTitleEnabled(true)
     }
 
-    // Fonction pour afficher le menu "Nouveau groupe, Profil, Paramètres"
-    private fun showPopupMenu(view: android.view.View) {
-        val popup = PopupMenu(this, view)
-        popup.menuInflater.inflate(R.menu.main_menu, popup.menu)
+    // Gestion du menu des 3 points (Correction des erreurs de ta photo)
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.main_menu, menu)
+        return true
+    }
 
-        popup.setOnMenuItemClickListener { item ->
-            when (item.itemId) {
-                R.id.action_group -> {
-                    showInfoDialog("New group", "Create a new group — feature coming soon.")
-                    true
-                }
-                R.id.action_profile -> {
-                    showInfoDialog("Profile", "Open your profile to edit name and avatar.")
-                    true
-                }
-                R.id.action_settings -> {
-                    showInfoDialog("Settings", "Adjust app settings and preferences.")
-                    true
-                }
-                else -> false
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
+            R.id.action_group -> {
+                Toast.makeText(this, "Nouveau groupe", Toast.LENGTH_SHORT).show()
+                return true
+            }
+            R.id.action_profile -> {
+                Toast.makeText(this, "Profil", Toast.LENGTH_SHORT).show()
+                return true
+            }
+            R.id.action_settings -> {
+                Toast.makeText(this, "Paramètres", Toast.LENGTH_SHORT).show()
+                return true
             }
         }
-        popup.show()
-    }
-
-    private fun showInfoDialog(title: String, message: String) {
-        AlertDialog.Builder(this)
-            .setTitle(title)
-            .setMessage(message)
-            .setPositiveButton(android.R.string.ok, null)
-            .show()
+        return super.onOptionsItemSelected(item)
     }
 }

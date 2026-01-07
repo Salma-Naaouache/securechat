@@ -4,7 +4,7 @@
 
     <item
         android:id="@+id/action_group"
-        android:title="Nouveau groupe"
+        android:title="Créer un groupe"
         app:showAsAction="never" />
 
     <item
