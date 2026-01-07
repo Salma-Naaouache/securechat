@@ -18,9 +18,10 @@ class SecureStorage(context: Context) {
         EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
     )
 
-    fun saveDisplayName(name: String) {
-        sharedPrefs.edit().putString("user_name", name).apply()
+    fun saveDisplayName(userId: String, name: String) {
+        sharedPrefs.edit().putString("${userId}_name", name).apply()
     }
 
-    fun getDisplayName(): String? = sharedPrefs.getString("user_name", null)
-}
+    fun getDisplayName(userId: String): String? {
+        return sharedPrefs.getString("${userId}_name", null)
+    }}

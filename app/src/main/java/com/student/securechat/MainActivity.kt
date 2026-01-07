@@ -1,10 +1,12 @@
 package com.student.securechat
 
+import android.content.Intent
 import android.os.Bundle
-import androidx.appcompat.app.AlertDialog // Import pour le dialogue
+import android.os.Handler
+import android.os.Looper
 import androidx.appcompat.app.AppCompatActivity
-import com.student.securechat.core.utils.RootDetector // Import de votre détecteur
-import com.student.securechat.core.security.BiometricAuth
+import com.student.securechat.core.utils.RootDetector
+import com.student.securechat.ui.auth.LoginActivity
 
 class MainActivity : AppCompatActivity() {
 
@@ -12,36 +14,26 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // --- ÉTAPE 1 : VÉRIFICATION DU ROOT ---
+        // Optionnel : Cacher la barre de statut pour un look "Full Screen"
+        supportActionBar?.hide()
+
+        // 1. Vérification de sécurité immédiate (Root)
         if (RootDetector.isDeviceRooted()) {
-            showRootWarning()
-        } else {
-            // --- ÉTAPE 2 : SI PAS ROOTÉ, ON LANCE LA BIOMÉTRIE ---
-            startBiometricCheck()
-
+            // Si l'appareil est rooté, on peut choisir d'arrêter ici
+            // ou d'afficher une alerte avant de fermer.
         }
-    }
 
-    private fun showRootWarning() {
-        AlertDialog.Builder(this)
-            .setTitle("Sécurité Compromise")
-            .setMessage("Votre appareil semble être rooté. Pour garantir la sécurité 'Zero-Trust' de vos messages, cette application ne peut pas s'exécuter.")
-            .setCancelable(false) // L'utilisateur ne peut pas fermer la fenêtre en cliquant à côté
-            .setPositiveButton("Quitter") { _, _ ->
-                finish() // Ferme l'application
-            }
-            .show()
-    }
+        // 2. Attendre 3 secondes avant de passer au Login
+        Handler(Looper.getMainLooper()).postDelayed({
 
-    private fun startBiometricCheck() {
-        val biometricAuth = BiometricAuth(this)
-        if (biometricAuth.isBiometricAvailable()) {
-            biometricAuth.authenticate {
-                // Succès : L'utilisateur est identifié, on peut charger les messages
-                runOnUiThread {
-                    // Afficher votre layout ou rediriger vers l'accueil
-                }
-            }
-        }
+            // Lancer la page de Login
+            val intent = Intent(this, LoginActivity::class.java)
+            startActivity(intent)
+
+            // Très important : on "finish" la MainActivity pour que l'utilisateur
+            // ne puisse pas revenir sur le Splash Screen avec le bouton retour.
+            finish()
+
+        }, 3000) // 3000 ms = 3 secondes
     }
 }
