@@ -1,96 +1,73 @@
 package com.student.securechat.ui.home
 
+import android.content.Intent
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.widget.EditText
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.Toolbar
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.firestore.FirebaseFirestore
 import com.student.securechat.R
-import com.student.securechat.data.model.User // Assurez-vous que votre model User est bien ici
+import com.student.securechat.adapters.UserAdapter
+import com.student.securechat.models.User
+import com.student.securechat.ui.chat.ChatActivity
 
-class UserListActivity : AppCompatActivity() {
+class UserListActivity : AppCompatActivity(), UserAdapter.OnUserClickListener {
 
+    private lateinit var rvUserList: RecyclerView
+    private lateinit var searchUser: EditText
     private lateinit var userAdapter: UserAdapter
-    private val userList = mutableListOf<User>()
-    private val filteredList = mutableListOf<User>()
+    private var userList = listOf<User>()
+    private val db = FirebaseFirestore.getInstance()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_user_list)
 
-        // 1. Setup Toolbar
-        val toolbar = findViewById<Toolbar>(R.id.toolbarUsers)
-        setSupportActionBar(toolbar)
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        supportActionBar?.title = "Nouveau message"
+        rvUserList = findViewById(R.id.rvUserList)
+        searchUser = findViewById(R.id.searchUser)
 
-        // 2. Setup RecyclerView
-        val recyclerView = findViewById<RecyclerView>(R.id.rvUserList)
-        recyclerView.layoutManager = LinearLayoutManager(this)
+        setupRecyclerView()
+        loadUsers()
 
-        // On initialise l'adapter avec la liste filtrée
-        userAdapter = UserAdapter(filteredList)
-        recyclerView.adapter = userAdapter
-
-        // 3. Setup Search Bar
-        setupSearchBar()
-
-        // 4. Charger les données
-        fetchUsersFromFirestore()
-    }
-
-    private fun fetchUsersFromFirestore() {
-        val db = FirebaseFirestore.getInstance()
-        db.collection("users").get()
-            .addOnSuccessListener { documents ->
-                userList.clear()
-                for (doc in documents) {
-                    val user = doc.toObject(User::class.java)
-                    // Optionnel : ne pas s'afficher soi-même dans la liste
-                    userList.add(user)
-                }
-                filteredList.clear()
-                filteredList.addAll(userList)
-                userAdapter.notifyDataSetChanged()
-            }
-            .addOnFailureListener {
-                Toast.makeText(this, "Erreur de chargement", Toast.LENGTH_SHORT).show()
-            }
-    }
-
-    private fun setupSearchBar() {
-        val searchBar = findViewById<EditText>(R.id.searchUser)
-        searchBar.addTextChangedListener(object : TextWatcher {
+        searchUser.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                filter(s.toString())
+                filterUsers(s.toString())
             }
+
             override fun afterTextChanged(s: Editable?) {}
         })
     }
 
-    private fun filter(text: String) {
-        filteredList.clear()
-        if (text.isEmpty()) {
-            filteredList.addAll(userList)
-        } else {
-            val query = text.lowercase()
-            for (user in userList) {
-                if (user.username.lowercase().contains(query)) {
-                    filteredList.add(user)
-                }
-            }
+    private fun setupRecyclerView() {
+        userAdapter = UserAdapter(userList, this)
+        rvUserList.apply {
+            layoutManager = LinearLayoutManager(this@UserListActivity)
+            adapter = userAdapter
         }
-        userAdapter.notifyDataSetChanged()
     }
 
-    override fun onSupportNavigateUp(): Boolean {
-        finish()
-        return true
+    private fun loadUsers() {
+        db.collection("users").get().addOnSuccessListener { result ->
+            userList = result.toObjects(User::class.java)
+            userAdapter.updateUsers(userList)
+        }
+    }
+
+    private fun filterUsers(query: String) {
+        val filteredList = userList.filter {
+            it.displayName.contains(query, ignoreCase = true)
+        }
+        userAdapter.updateUsers(filteredList)
+    }
+
+    override fun onUserClick(user: User) {
+        val intent = Intent(this, ChatActivity::class.java)
+        intent.putExtra("USER", user)
+        startActivity(intent)
     }
 }

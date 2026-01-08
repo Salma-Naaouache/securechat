@@ -1,50 +1,55 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFFFFF">
+    android:background="#F5F5F5"
+    tools:context=".ui.home.UserListActivity">
 
-    <com.google.android.material.appbar.AppBarLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="#FFFFFF"
-        app:elevation="0dp">
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_margin="16dp"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
 
-        <androidx.appcompat.widget.Toolbar
-            android:id="@+id/toolbarUsers"
+        <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            app:title="Contacts"
-            app:titleTextAppearance="@style/FunkyTitleStyle"
-            app:navigationIcon="?attr/homeAsUpIndicator" />
-
-        <FrameLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:paddingHorizontal="20dp"
-            android:paddingBottom="15dp">
+            android:layout_height="match_parent">
 
             <EditText
                 android:id="@+id/searchUser"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:background="@drawable/search_bg_minimal"
-                android:drawableStart="@android:drawable/ic_menu_search"
+                android:layout_width="0dp"
+                android:layout_height="50dp"
+                android:layout_margin="16dp"
+                android:background="@drawable/search_bar_rounded"
+                android:drawableStart="@drawable/ic_search"
                 android:drawablePadding="12dp"
                 android:hint="Rechercher un utilisateur..."
                 android:paddingStart="16dp"
-                android:textSize="14sp"
-                app:drawableTint="#9E9E9E" />
-        </FrameLayout>
-    </com.google.android.material.appbar.AppBarLayout>
+                android:paddingEnd="16dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvUserList"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:paddingTop="10dp"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior" />
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvUserList"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_marginTop="16dp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/searchUser"
+                tools:listitem="@layout/item_user" />
 
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

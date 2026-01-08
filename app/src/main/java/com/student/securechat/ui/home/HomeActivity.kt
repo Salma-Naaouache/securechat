@@ -2,11 +2,13 @@ package com.student.securechat.ui.home
 
 import android.content.Intent
 import android.os.Bundle
-import android.view.Menu         // Import manquant dans ton erreur
-import android.view.MenuItem     // Import manquant dans ton erreur
+import android.view.Menu
+import android.view.MenuItem
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.student.securechat.R
 
 class HomeActivity : AppCompatActivity() {
@@ -14,21 +16,33 @@ class HomeActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_home)
-        val fabNewChat = findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.fabNewChat)
+
+        val fabNewChat = findViewById<FloatingActionButton>(R.id.fabNewChat)
         fabNewChat.setOnClickListener {
-            val intent = Intent(this, UserListActivity::class.java)
-            startActivity(intent)
+            startActivity(Intent(this, UserListActivity::class.java))
         }
 
-        // Configuration de la Toolbar
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
-
-        // On retire le titre par défaut pour laisser le style personnalisé du XML
         supportActionBar?.setDisplayShowTitleEnabled(true)
+
+        val bottomNav = findViewById<BottomNavigationView>(R.id.bottomNavigation)
+        bottomNav.setOnItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.nav_profile -> {
+                    startActivity(Intent(this, ProfileActivity::class.java))
+                    true
+                }
+                R.id.nav_chats -> true
+                R.id.nav_calls -> {
+                    Toast.makeText(this, "Appels", Toast.LENGTH_SHORT).show()
+                    true
+                }
+                else -> false
+            }
+        }
     }
 
-    // Gestion du menu des 3 points (Correction des erreurs de ta photo)
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.main_menu, menu)
         return true
@@ -36,12 +50,12 @@ class HomeActivity : AppCompatActivity() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
-            R.id.action_group -> {
-                Toast.makeText(this, "Nouveau groupe", Toast.LENGTH_SHORT).show()
+            R.id.action_profile -> {
+                startActivity(Intent(this, ProfileActivity::class.java))
                 return true
             }
-            R.id.action_profile -> {
-                Toast.makeText(this, "Profil", Toast.LENGTH_SHORT).show()
+            R.id.action_group -> {
+                Toast.makeText(this, "Nouveau groupe", Toast.LENGTH_SHORT).show()
                 return true
             }
             R.id.action_settings -> {

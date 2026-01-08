@@ -6,53 +6,134 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import com.student.securechat.MainActivity
 import com.student.securechat.R
-import com.student.securechat.data.local.SecureStorage // Import ajouté
-import com.student.securechat.data.remote.AuthHelper
 import com.student.securechat.ui.home.HomeActivity
+// ✅ AJOUTER CES IMPORTS
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FieldValue
 
 class SignupActivity : AppCompatActivity() {
 
-    // On déclare le SecureStorage comme dans la LoginActivity
-    private lateinit var secureStorage: SecureStorage
+    // ✅ REMPLACER AuthHelper par Firebase directement
+    private lateinit var auth: FirebaseAuth
+    private lateinit var db: FirebaseFirestore
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_signup)
 
-        // Initialisation du SecureStorage
-        secureStorage = SecureStorage(this)
+        // ✅ INITIALISER Firebase Auth et Firestore
+        auth = FirebaseAuth.getInstance()
+        db = FirebaseFirestore.getInstance()
 
-        val emailField = findViewById<EditText>(R.id.editEmail)
-        val passwordField = findViewById<EditText>(R.id.editPassword)
-        val usernameField = findViewById<EditText>(R.id.editUsername)
-        val signupBtn = findViewById<Button>(R.id.btnSignup)
+        // Garder tes IDs actuels
+        val displayNameEditText = findViewById<EditText>(R.id.displayNameEditText)
+        val emailEditText = findViewById<EditText>(R.id.emailEditText)
+        val passwordEditText = findViewById<EditText>(R.id.passwordEditText)
+        val signupButton = findViewById<Button>(R.id.signupButton)
 
-        signupBtn.setOnClickListener {
-            val username = usernameField.text.toString().trim()
-            val email = emailField.text.toString().trim()
-            val pass = passwordField.text.toString().trim()
+        signupButton.setOnClickListener {
+            val displayName = displayNameEditText.text.toString().trim()
+            val email = emailEditText.text.toString().trim()
+            val password = passwordEditText.text.toString().trim()
 
-            if (username.isNotEmpty() && email.isNotEmpty() && pass.length >= 6) {
-                // On passe maintenant 3 paramètres à signUp
-                AuthHelper.signUp(email, pass, username) { success ->
-                    if (success) {
-                        val uid = AuthHelper.getCurrentUserId() ?: "unknown"
+            // Validation
+            if (displayName.isEmpty()) {
+                Toast.makeText(this, "Entrez un nom d'utilisateur", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
 
-                        // On sauvegarde le VRAI username dans SecureStorage au lieu de "User_$uid"
-                        secureStorage.saveDisplayName(uid, username)
+            if (email.isEmpty()) {
+                Toast.makeText(this, "Entrez un email", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
 
-                        Toast.makeText(this, "Bienvenue $username !", Toast.LENGTH_SHORT).show()
-                        startActivity(Intent(this, HomeActivity::class.java))
-                        finish()
+            if (password.length < 6) {
+                Toast.makeText(this, "Le mot de passe doit contenir au moins 6 caractères", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            // ✅ CRÉER LE COMPTE avec Firebase Auth
+            auth.createUserWithEmailAndPassword(email, password)
+                .addOnCompleteListener(this) { task ->
+                    if (task.isSuccessful) {
+                        // ✅ RÉCUPÉRER LE userId
+                        val currentUser = auth.currentUser
+                        val userId = currentUser?.uid ?: return@addOnCompleteListener
+
+                        // ✅ CRÉER L'UTILISATEUR dans Firestore (collection "users")
+                        createUserInFirestore(userId, email, displayName)
+
                     } else {
-                        Toast.makeText(this, "Erreur lors de l'inscription.", Toast.LENGTH_SHORT).show()
+                        // Erreur lors de la création du compte
+                        Toast.makeText(
+                            this,
+                            "Erreur: ${task.exception?.message}",
+                            Toast.LENGTH_LONG
+                        ).show()
                     }
                 }
-            } else {
-                Toast.makeText(this, "Veuillez remplir tous les champs correctement", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    /**
+     * ✅ NOUVELLE FONCTION : Créer l'utilisateur dans Firestore
+     */
+    private fun createUserInFirestore(userId: String, email: String, displayName: String) {
+        // Créer l'objet User selon notre structure Firebase
+        val userData = hashMapOf(
+            "userId" to userId,
+            "email" to email,
+            "displayName" to displayName,
+            "avatarUrl" to "",  // Vide pour l'instant
+            "publicKey" to "",  // Tu généreras la clé RSA plus tard
+            "createdAt" to FieldValue.serverTimestamp(),
+            "lastSeen" to FieldValue.serverTimestamp(),
+            "isOnline" to true
+        )
+
+        // ✅ ENVOYER à Firebase dans la collection "users"
+        db.collection("users")
+            .document(userId)
+            .set(userData)
+            .addOnSuccessListener {
+                // ✅ SUCCÈS : Sauvegarder localement et aller à HomeActivity
+                saveUserDataLocally(userId, displayName)
+
+                Toast.makeText(
+                    this,
+                    "Bienvenue $displayName !",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+                // Aller vers HomeActivity
+                val intent = Intent(this, HomeActivity::class.java)
+                intent.putExtra("USER_ID", userId)
+                intent.putExtra("DISPLAY_NAME", displayName)
+                startActivity(intent)
+                finish()
             }
+            .addOnFailureListener { e ->
+                // ❌ ERREUR Firestore
+                Toast.makeText(
+                    this,
+                    "Erreur Firestore: ${e.message}",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+    }
+
+    /**
+     * ✅ SAUVEGARDER les données localement (SharedPreferences)
+     */
+    private fun saveUserDataLocally(userId: String, displayName: String) {
+        val sharedPref = getSharedPreferences("SecureChatPrefs", MODE_PRIVATE)
+        with(sharedPref.edit()) {
+            putString("USER_ID", userId)
+            putString("DISPLAY_NAME", displayName)
+            putBoolean("IS_LOGGED_IN", true)
+            apply()
         }
     }
 }
