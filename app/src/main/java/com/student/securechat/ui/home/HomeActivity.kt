@@ -1,5 +1,6 @@
 package com.student.securechat.ui.home
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.Menu         // Import manquant dans ton erreur
 import android.view.MenuItem     // Import manquant dans ton erreur
@@ -13,6 +14,11 @@ class HomeActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_home)
+        val fabNewChat = findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.fabNewChat)
+        fabNewChat.setOnClickListener {
+            val intent = Intent(this, UserListActivity::class.java)
+            startActivity(intent)
+        }
 
         // Configuration de la Toolbar
         val toolbar = findViewById<Toolbar>(R.id.toolbar)

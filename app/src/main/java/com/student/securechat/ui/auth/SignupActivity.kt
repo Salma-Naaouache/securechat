@@ -10,6 +10,7 @@ import com.student.securechat.MainActivity
 import com.student.securechat.R
 import com.student.securechat.data.local.SecureStorage // Import ajouté
 import com.student.securechat.data.remote.AuthHelper
+import com.student.securechat.ui.home.HomeActivity
 
 class SignupActivity : AppCompatActivity() {
 
@@ -25,30 +26,32 @@ class SignupActivity : AppCompatActivity() {
 
         val emailField = findViewById<EditText>(R.id.editEmail)
         val passwordField = findViewById<EditText>(R.id.editPassword)
+        val usernameField = findViewById<EditText>(R.id.editUsername)
         val signupBtn = findViewById<Button>(R.id.btnSignup)
 
         signupBtn.setOnClickListener {
+            val username = usernameField.text.toString().trim()
             val email = emailField.text.toString().trim()
             val pass = passwordField.text.toString().trim()
 
-            if (email.isNotEmpty() && pass.length >= 6) {
-                AuthHelper.signUp(email, pass) { success ->
+            if (username.isNotEmpty() && email.isNotEmpty() && pass.length >= 6) {
+                // On passe maintenant 3 paramètres à signUp
+                AuthHelper.signUp(email, pass, username) { success ->
                     if (success) {
-                        // --- AJOUT DE LA SAUVEGARDE LOCALE ---
                         val uid = AuthHelper.getCurrentUserId() ?: "unknown"
 
-                        // Utilisation de la nouvelle signature : saveDisplayName(userId, name)
-                        secureStorage.saveDisplayName(uid, "User_$uid")
+                        // On sauvegarde le VRAI username dans SecureStorage au lieu de "User_$uid"
+                        secureStorage.saveDisplayName(uid, username)
 
-                        Toast.makeText(this, "Compte créé avec succès !", Toast.LENGTH_SHORT).show()
-                        startActivity(Intent(this, MainActivity::class.java))
+                        Toast.makeText(this, "Bienvenue $username !", Toast.LENGTH_SHORT).show()
+                        startActivity(Intent(this, HomeActivity::class.java))
                         finish()
                     } else {
                         Toast.makeText(this, "Erreur lors de l'inscription.", Toast.LENGTH_SHORT).show()
                     }
                 }
             } else {
-                Toast.makeText(this, "Veuillez remplir correctement les champs (Pass: 6 char min)", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Veuillez remplir tous les champs correctement", Toast.LENGTH_SHORT).show()
             }
         }
     }
