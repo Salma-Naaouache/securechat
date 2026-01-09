@@ -72,7 +72,14 @@ class ChatAdapter(
 
     private fun decryptMessage(message: Message): String {
         return try {
-            val encryptedAesKeyBytes = android.util.Base64.decode(message.encryptedAesKey, android.util.Base64.DEFAULT)
+            // ✅ CORRIGÉ: Logique de déchiffrement rétrocompatible
+            val encryptedAesKeyString = if (message.encryptedKeys.isNotEmpty()) {
+                message.encryptedKeys[currentUserId]
+            } else {
+                message.encryptedAesKey // Fallback pour les anciens messages
+            } ?: throw SecurityException("No encrypted key found for current user")
+
+            val encryptedAesKeyBytes = android.util.Base64.decode(encryptedAesKeyString, android.util.Base64.DEFAULT)
             val decryptedAesKeyBytes = cryptoManager.decryptWithRsa(encryptedAesKeyBytes)
             val secretKey = cryptoManager.byteArrayToSecretKey(decryptedAesKeyBytes)
 
@@ -81,7 +88,7 @@ class ChatAdapter(
 
             cryptoManager.decryptWithAes(content, secretKey, iv)
         } catch (e: Exception) {
-            "Error decrypting message"
+            "Error decrypting message: ${e.message}"
         }
     }
 }

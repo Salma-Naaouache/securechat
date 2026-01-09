@@ -34,6 +34,21 @@
             android:name=".ui.home.UserListActivity"
             android:exported="false" />
         <activity
+            android:name=".ui.settings.SettingsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.chat.ChatActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.chat.GroupChatActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.group.CreateGroupActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.call.CallActivity"
+            android:exported="false" />
+        <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>

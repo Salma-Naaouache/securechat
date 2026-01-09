@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F5F5F5"
+    tools:context=".ui.settings.SettingsActivity">
+
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/appBarLayoutSettings"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbarSettings"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            app:title="Paramètres"
+            app:titleTextAppearance="@style/FunkyTitleStyle" />
+
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
+        android:layout_marginTop="32dp"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="8dp"
+        app:layout_constraintTop_toBottomOf="@+id/appBarLayoutSettings"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:id="@+id/setting_account"
+                style="@style/SettingsItem"
+                android:text="Compte"
+                app:drawableStartCompat="@drawable/ic_profile" />
+
+            <View style="@style/Divider" />
+
+            <TextView
+                android:id="@+id/setting_notifications"
+                style="@style/SettingsItem"
+                android:text="Notifications"
+                app:drawableStartCompat="@drawable/ic_notifications" />
+
+            <View style="@style/Divider" />
+
+            <TextView
+                android:id="@+id/setting_privacy"
+                style="@style/SettingsItem"
+                android:text="Confidentialité"
+                app:drawableStartCompat="@drawable/ic_privacy" />
+
+            <View style="@style/Divider" />
+
+            <TextView
+                android:id="@+id/setting_help"
+                style="@style/SettingsItem"
+                android:text="Aide"
+                app:drawableStartCompat="@drawable/ic_help" />
+
+        </LinearLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

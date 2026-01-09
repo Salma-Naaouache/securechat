@@ -8,7 +8,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.google.android.material.imageview.ShapeableImageView
 import com.student.securechat.R
-import com.student.securechat.models.User
+import com.student.securechat.data.model.User
 
 class UserAdapter(
     private var userList: List<User>,

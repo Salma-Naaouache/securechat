@@ -10,14 +10,15 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
 import com.bumptech.glide.Glide
-import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import com.student.securechat.R
+import com.student.securechat.data.model.User
 import com.student.securechat.ui.auth.LoginActivity
 import java.util.UUID
 
@@ -37,7 +38,6 @@ class ProfileActivity : AppCompatActivity() {
     private var currentUserId: String? = null
     private var selectedImageUri: Uri? = null
 
-    // Launcher pour sélectionner une image
     private val pickImageLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -53,12 +53,16 @@ class ProfileActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_profile)
 
-        // Initialiser Firebase
+        val toolbar = findViewById<Toolbar>(R.id.toolbarProfile)
+        setSupportActionBar(toolbar)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        supportActionBar?.setDisplayShowTitleEnabled(false)
+        toolbar.setNavigationOnClickListener { onBackPressedDispatcher.onBackPressed() }
+
         auth = FirebaseAuth.getInstance()
         db = FirebaseFirestore.getInstance()
         storage = FirebaseStorage.getInstance()
 
-        // Récupérer userId
         currentUserId = auth.currentUser?.uid
 
         if (currentUserId == null) {
@@ -67,21 +71,13 @@ class ProfileActivity : AppCompatActivity() {
             return
         }
 
-        // Initialiser les views
         initializeViews()
-
-        // Charger les données utilisateur
         loadUserProfile()
 
-        // Bouton pour changer l'avatar
         btnEditPhoto.setOnClickListener {
             openImagePicker()
         }
 
-        // Bottom Navigation
-        setupBottomNavigation()
-
-        // Logout
         btnLogout.setOnClickListener {
             logout()
         }
@@ -102,18 +98,14 @@ class ProfileActivity : AppCompatActivity() {
                 .document(userId)
                 .get()
                 .addOnSuccessListener { document ->
-                    if (document.exists()) {
-                        val displayName = document.getString("displayName") ?: "Utilisateur"
-                        val email = document.getString("email") ?: ""
-                        val avatarUrl = document.getString("avatarUrl") ?: ""
+                    val user = document.toObject(User::class.java)
+                    user?.let {
+                        profileNameHeader.text = it.displayName
+                        txtProfileUsername.text = it.displayName
+                        txtProfileEmail.text = it.email
 
-                        profileNameHeader.text = displayName
-                        txtProfileUsername.text = displayName
-                        txtProfileEmail.text = email
-
-                        // Charger l'avatar si disponible
-                        if (avatarUrl.isNotEmpty()) {
-                            loadAvatarWithUri(Uri.parse(avatarUrl))
+                        if (it.avatarUrl.isNotEmpty()) {
+                            loadAvatarWithUri(Uri.parse(it.avatarUrl))
                         }
                     }
                 }
@@ -172,33 +164,6 @@ class ProfileActivity : AppCompatActivity() {
             db.collection("users")
                 .document(userId)
                 .update("avatarUrl", avatarUrl)
-                .addOnSuccessListener {
-                    println("✅ Avatar URL sauvegardée")
-                }
-                .addOnFailureListener { e ->
-                    println("❌ Erreur: ${e.message}")
-                }
-        }
-    }
-
-    private fun setupBottomNavigation() {
-        val bottomNav = findViewById<BottomNavigationView>(R.id.bottomNavigationProfile)
-        bottomNav.selectedItemId = R.id.nav_profile
-
-        bottomNav.setOnItemSelectedListener { item ->
-            when (item.itemId) {
-                R.id.nav_chats -> {
-                    startActivity(Intent(this, HomeActivity::class.java))
-                    finish()
-                    true
-                }
-                R.id.nav_calls -> {
-                    Toast.makeText(this, "Appels - Bientôt disponible", Toast.LENGTH_SHORT).show()
-                    true
-                }
-                R.id.nav_profile -> true
-                else -> false
-            }
         }
     }
 

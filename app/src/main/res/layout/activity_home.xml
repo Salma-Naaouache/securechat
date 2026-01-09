@@ -4,58 +4,61 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFFFFF">
+    android:background="#F5F5F5">
 
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#FFFFFF"
+        android:background="@android:color/transparent"
         app:elevation="0dp">
 
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="97dp"
-            app:title="Secure Chat"
+            app:title="Discussions"
             app:titleTextAppearance="@style/FunkyTitleStyle" />
 
-        <FrameLayout
+        <!-- Barre de recherche stylisée en carte -->
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingHorizontal="20dp"
-            android:paddingBottom="15dp">
+            android:layout_marginStart="20dp"
+            android:layout_marginEnd="20dp"
+            android:layout_marginBottom="15dp"
+            app:cardCornerRadius="24dp"
+            app:cardElevation="8dp">
 
             <EditText
+                android:id="@+id/searchEditText"
                 android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:background="@drawable/search_bg_minimal"
-                android:backgroundTint="#B375E2"
-                android:drawableStart="@android:drawable/ic_menu_search"
+                android:layout_height="wrap_content"
+                android:background="@android:color/transparent"
+                android:drawableStart="@drawable/ic_search"
                 android:drawablePadding="12dp"
+                android:drawableTint="#8A8A8A"
                 android:hint="Rechercher une discussion"
-                android:paddingStart="16dp"
-                android:textColorHint="#A69EB6"
-                android:textSize="14sp"
-                app:drawableTint="#EAE8ED" />
-        </FrameLayout>
+                android:padding="16dp"
+                android:textSize="14sp" />
+
+        </com.google.android.material.card.MaterialCardView>
+
     </com.google.android.material.appbar.AppBarLayout>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvDiscussions"
         android:layout_width="match_parent"
-        android:layout_height="605dp"
+        android:layout_height="match_parent"
         android:clipToPadding="false"
         android:paddingBottom="80dp"
-        app:layout_anchor="@+id/rvDiscussions"
-        app:layout_anchorGravity="center"
         app:layout_behavior="@string/appbar_scrolling_view_behavior" />
 
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNavigation"
         android:layout_width="match_parent"
-        android:layout_height="72dp"
+        android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        android:background="#FFFFFF"
+        android:background="@drawable/bottom_nav_rounded" 
         app:elevation="20dp"
         app:itemIconTint="@color/navigation_colors"
         app:itemTextColor="@color/navigation_colors"
@@ -64,12 +67,12 @@
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fabNewChat"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_height="wrap_content" 
         android:layout_gravity="bottom|end"
         android:layout_marginEnd="20dp"
-        android:layout_marginBottom="90dp"
+        android:layout_marginBottom="120dp" 
         android:src="@android:drawable/ic_input_add"
-        app:backgroundTint="#874DC1"
+        app:backgroundTint="@color/purple_500"
         app:elevation="6dp"
         app:pressedTranslationZ="12dp"
         app:tint="#FFFFFF" />
