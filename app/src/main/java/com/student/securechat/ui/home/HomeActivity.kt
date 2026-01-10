@@ -18,6 +18,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
+import com.google.android.gms.tasks.Tasks
 import com.student.securechat.R
 import com.student.securechat.data.model.ChatSummary
 import com.student.securechat.data.model.User
@@ -29,7 +30,6 @@ import com.student.securechat.ui.settings.SettingsActivity
 
 class HomeActivity : AppCompatActivity(), RecentChatAdapter.OnChatClickListener {
 
-    // ... (les autres variables de classe restent les mêmes)
     private lateinit var rvRecentChats: RecyclerView
     private lateinit var recentChatAdapter: RecentChatAdapter
     private lateinit var searchEditText: EditText
@@ -68,7 +68,7 @@ class HomeActivity : AppCompatActivity(), RecentChatAdapter.OnChatClickListener 
 
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
-        supportActionBar?.title = "Discussions"
+        supportActionBar?.title = "Secure Chat"
 
         val bottomNav = findViewById<BottomNavigationView>(R.id.bottomNavigation)
         bottomNav.setOnItemSelectedListener { item ->
@@ -77,7 +77,6 @@ class HomeActivity : AppCompatActivity(), RecentChatAdapter.OnChatClickListener 
                     startActivity(Intent(this, ProfileActivity::class.java))
                     true
                 }
-                // ✅ AJOUTÉ: Lancer l'activité des appels
                 R.id.nav_calls -> {
                     startActivity(Intent(this, CallActivity::class.java))
                     true
@@ -87,7 +86,6 @@ class HomeActivity : AppCompatActivity(), RecentChatAdapter.OnChatClickListener 
         }
     }
 
-    // ... (le reste du code reste inchangé)
     private fun setupRecyclerView() {
         recentChatAdapter = RecentChatAdapter(emptyList(), this, currentUserId!!)
         rvRecentChats.apply {
@@ -136,80 +134,74 @@ class HomeActivity : AppCompatActivity(), RecentChatAdapter.OnChatClickListener 
                 }
 
                 val otherUserIds = snapshots.documents.mapNotNull {
-                    (it.get("participants") as? List<String>)?.firstOrNull { id -> id != currentId }
+                    if (it.getBoolean("isGroup") != true) {
+                        (it.get("participants") as? List<String>)?.firstOrNull { id -> id != currentId }
+                    } else null
                 }.distinct()
 
-                if (otherUserIds.isEmpty()) {
-                     val groupChats = snapshots.documents.mapNotNull { doc ->
-                        if (doc.getBoolean("isGroup") == true) {
-                             ChatSummary(
+                val userFetchTask = if (otherUserIds.isNotEmpty()) {
+                    db.collection("users").whereIn("userId", otherUserIds).get()
+                } else {
+                    Tasks.forResult(null)
+                }
+
+                userFetchTask.addOnSuccessListener { usersSnapshot ->
+                    val usersMap = usersSnapshot?.documents?.mapNotNull { doc ->
+                        try {
+                            User(
+                                userId = doc.id,
+                                displayName = doc.getString("displayName") ?: "",
+                                email = doc.getString("email") ?: "",
+                                avatarUrl = doc.getString("avatarUrl") ?: "",
+                                publicKey = doc.getString("publicKey") ?: "",
+                                isOnline = doc.getBoolean("isOnline") ?: false,
+                                createdAt = doc.getDate("createdAt"),
+                                lastSeen = doc.getDate("lastSeen")
+                            )
+                        } catch (e: Exception) {
+                            Log.e("HomeActivity", "Failed to parse user.", e)
+                            null
+                        }
+                    }?.associateBy { it.userId } ?: emptyMap()
+
+                    val newChatList = snapshots.documents.mapNotNull { doc ->
+                        val isGroup = doc.getBoolean("isGroup") ?: false
+                        val unreadCountRaw = doc.get("unreadCount") as? Map<String, Any> ?: emptyMap()
+                        val unreadCount = unreadCountRaw.mapValues { (_, value) -> (value as? Number)?.toLong() ?: 0L }
+
+                        if (isGroup) {
+                            ChatSummary(
                                 chatRoomId = doc.id,
                                 isGroup = true,
                                 groupName = doc.getString("groupName"),
                                 lastMessage = doc.getString("lastMessage"),
                                 lastMessageTimestamp = doc.getDate("lastMessageTimestamp"),
-                                unreadCount = doc.get("unreadCount") as? Map<String, Long> ?: emptyMap(),
+                                unreadCount = unreadCount,
                                 lastMessageSenderId = doc.getString("lastMessageSenderId")
                             )
-                        } else null
-                    }.sortedByDescending { it.lastMessageTimestamp }
-
-                    fullChatList = groupChats
-                    filterChats(searchEditText.text.toString())
-                    return@addSnapshotListener
-                }
-
-                db.collection("users").whereIn("userId", otherUserIds).get()
-                    .addOnSuccessListener { usersSnapshot ->
-                        val usersMap = usersSnapshot.documents.mapNotNull { doc ->
-                            try {
-                                User(
-                                    userId = doc.id,
-                                    displayName = doc.getString("displayName") ?: "",
-                                    email = doc.getString("email") ?: "",
-                                    avatarUrl = doc.getString("avatarUrl") ?: "",
-                                    publicKey = doc.getString("publicKey") ?: "",
-                                    isOnline = doc.getBoolean("isOnline") ?: false,
-                                    createdAt = doc.getDate("createdAt"),
-                                    lastSeen = doc.getDate("lastSeen")
-                                )
-                            } catch (e: Exception) {
-                                Log.e("HomeActivity", "Failed to parse user document: ${doc.id}", e)
-                                null
-                            }
-                        }.associateBy { it.userId }
-
-                        val newChatList = snapshots.documents.mapNotNull { doc ->
-                             if (doc.getBoolean("isGroup") == true) {
-                                 ChatSummary(
-                                    chatRoomId = doc.id,
-                                    isGroup = true,
-                                    groupName = doc.getString("groupName"),
-                                    lastMessage = doc.getString("lastMessage"),
-                                    lastMessageTimestamp = doc.getDate("lastMessageTimestamp"),
-                                    unreadCount = doc.get("unreadCount") as? Map<String, Long> ?: emptyMap(),
-                                    lastMessageSenderId = doc.getString("lastMessageSenderId")
-                                )
-                            } else {
-                                val otherId = (doc.get("participants") as? List<String>)?.firstOrNull { id -> id != currentId } ?: return@mapNotNull null
-                                val otherUser = usersMap[otherId]
-
+                        } else {
+                            val otherId = (doc.get("participants") as? List<String>)?.firstOrNull { id -> id != currentId }
+                            val otherUser = otherId?.let { usersMap[it] }
+                            if (otherUser != null) {
                                 ChatSummary(
                                     chatRoomId = doc.id,
                                     otherParticipantId = otherId,
-                                    otherParticipantName = otherUser?.displayName ?: "Utilisateur inconnu",
-                                    otherParticipantAvatar = otherUser?.avatarUrl ?: "",
+                                    otherParticipantName = otherUser.displayName,
+                                    otherParticipantAvatar = otherUser.avatarUrl,
                                     lastMessage = doc.getString("lastMessage"),
                                     lastMessageTimestamp = doc.getDate("lastMessageTimestamp"),
-                                    unreadCount = doc.get("unreadCount") as? Map<String, Long> ?: emptyMap(),
+                                    unreadCount = unreadCount,
                                     lastMessageSenderId = doc.getString("lastMessageSenderId")
                                 )
-                            }
-                        }.sortedByDescending { it.lastMessageTimestamp }
+                            } else null
+                        }
+                    }.sortedByDescending { it.lastMessageTimestamp }
 
-                        fullChatList = newChatList
-                        filterChats(searchEditText.text.toString())
-                    }
+                    fullChatList = newChatList
+                    filterChats(searchEditText.text.toString())
+                }.addOnFailureListener {
+                    Log.e("HomeActivity", "Failed to fetch user profiles", it)
+                }
             }
     }
 

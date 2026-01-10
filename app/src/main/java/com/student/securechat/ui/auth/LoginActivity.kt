@@ -7,19 +7,23 @@ import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.FragmentActivity
 import com.google.firebase.auth.FirebaseAuth
 import com.student.securechat.R
+import com.student.securechat.core.security.BiometricAuth
 import com.student.securechat.ui.home.HomeActivity
 
 class LoginActivity : AppCompatActivity() {
 
     private lateinit var auth: FirebaseAuth
+    private lateinit var biometricAuth: BiometricAuth
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
 
         auth = FirebaseAuth.getInstance()
+        biometricAuth = BiometricAuth(this as FragmentActivity)
 
         val emailEditText = findViewById<EditText>(R.id.emailEditText)
         val passwordEditText = findViewById<EditText>(R.id.passwordEditText)
@@ -38,10 +42,10 @@ class LoginActivity : AppCompatActivity() {
             auth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener(this) { task ->
                     if (task.isSuccessful) {
-                        startActivity(Intent(this, HomeActivity::class.java))
-                        finish()
+                        goToHomeActivity()
                     } else {
-                        Toast.makeText(this, "Erreur d\'authentification: ${task.exception?.message}", Toast.LENGTH_LONG).show()
+                        // ✅ CORRIGÉ: Afficher un message d'erreur générique et sécurisé
+                        Toast.makeText(this, "L\'adresse e-mail ou le mot de passe est incorrect.", Toast.LENGTH_LONG).show()
                     }
                 }
         }
@@ -49,5 +53,23 @@ class LoginActivity : AppCompatActivity() {
         signupText.setOnClickListener {
             startActivity(Intent(this, SignupActivity::class.java))
         }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        if (auth.currentUser != null) {
+            if (biometricAuth.isBiometricAvailable()) {
+                biometricAuth.authenticate { goToHomeActivity() }
+            } else {
+                goToHomeActivity()
+            }
+        }
+    }
+
+    private fun goToHomeActivity() {
+        val intent = Intent(this, HomeActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        startActivity(intent)
+        finish()
     }
 }

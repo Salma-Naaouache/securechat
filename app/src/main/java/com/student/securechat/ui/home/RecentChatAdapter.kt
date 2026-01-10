@@ -55,18 +55,21 @@ class RecentChatAdapter(
         }
 
         fun bind(chat: ChatSummary) {
-            // ✅ CORRIGÉ: Afficher le nom du groupe ou du contact
             val displayName = if (chat.isGroup) chat.groupName else chat.otherParticipantName
             userName.text = displayName ?: "Conversation"
 
-            val lastMessageText = if (chat.lastMessageSenderId == currentUserId) {
-                "Vous: ${chat.lastMessage}"
-            } else {
-                chat.lastMessage
+            // ✅ CORRIGÉ: Afficher un placeholder au lieu du texte crypté
+            val lastMessagePreview = chat.lastMessage
+            var displayText = ""
+            if (!lastMessagePreview.isNullOrEmpty()) {
+                displayText = if (chat.lastMessageSenderId == currentUserId) {
+                    "Vous: Message"
+                } else {
+                    "Message"
+                }
             }
-            lastMessage.text = lastMessageText
+            lastMessage.text = displayText
 
-            // Pour les groupes, on pourrait afficher une icône générique
             val imageUrl = if (chat.isGroup) "" else chat.otherParticipantAvatar
             if (imageUrl?.isNotEmpty() == true) {
                 Glide.with(itemView.context)

@@ -1,50 +1,36 @@
 package com.student.securechat.core.utils
 
-import android.os.Build
-import java.io.File
+import android.content.Context
+import android.util.Log
+import com.scottyab.rootbeer.RootBeer
 
 object RootDetector {
 
-    /**
-     * 1. VÉRIFICATION DU BINAIRE "SU"
-     * On parcourt les répertoires standards où les gestionnaires de root
-     * (comme Magisk ou SuperSU) installent le binaire "su".
-     */
-    private val binaryPaths = arrayOf(
-        "/system/app/Superuser.apk",
-        "/sbin/su",
-        "/system/bin/su",
-        "/system/xbin/su",
-        "/com/student/securechat/data/local/xbin/su",
-        "/com/student/securechat/data/local/bin/su",
-        "/system/sd/xbin/su",
-        "/system/bin/failsafe/su",
-        "/com/student/securechat/data/local/su"
-    )
-
-    /**
-     * 2. VÉRIFICATION DES TAGS DE BUILD
-     * On vérifie si le système d'exploitation a été compilé avec des clés de test.
-     * Build.TAGS est une constante système fournie par Android.
-     */
-    private fun checkBuildTags(): Boolean {
-        val tags = Build.TAGS
-        return tags != null && tags.contains("test-keys")
-    }
+    private const val TAG = "RootDetector"
 
     /**
      * FONCTION PRINCIPALE D'ACTION
-     * Combine les vérifications pour retourner un verdict.
+     * Utilise la librairie RootBeer pour une détection fiable et détaillée.
      */
-    fun isDeviceRooted(): Boolean {
-        // Vérifie la présence physique des fichiers 'su'
-        for (path in binaryPaths) {
-            if (File(path).exists()) return true
+    fun isDeviceRooted(context: Context): Boolean {
+        val rootBeer = RootBeer(context)
+
+        // On lance une vérification détaillée pour voir exactement quelle méthode détecte le root.
+        val isRooted = rootBeer.isRooted
+
+        if (isRooted) {
+            Log.e(TAG, "L'appareil est DÉTECTÉ comme étant rooté !")
+            Log.d(TAG, "Vérification des binaires SU: " + if(rootBeer.checkForSuBinary()) "TROUVÉ" else "non trouvé")
+            Log.d(TAG, "Vérification de l'existence de SU: " + if(rootBeer.checkSuExists()) "TROUVÉ" else "non trouvé")
+            Log.d(TAG, "Vérification des chemins en lecture/écriture: " + if(rootBeer.checkForRWPaths()) "TROUVÉ" else "non trouvé")
+            Log.d(TAG, "Vérification des propriétés dangereuses: " + if(rootBeer.checkForDangerousProps()) "TROUVÉ" else "non trouvé")
+            Log.d(TAG, "Vérification native du root: " + if(rootBeer.checkForRootNative()) "TROUVÉ" else "non trouvé")
+            Log.d(TAG, "Vérification du binaire Magisk: " + if(rootBeer.checkForMagiskBinary()) "TROUVÉ" else "non trouvé")
+            Log.d(TAG, "Vérification du binaire BusyBox: " + if(rootBeer.checkForBusyBoxBinary()) "TROUVÉ" else "non trouvé")
+        } else {
+            Log.i(TAG, "L'appareil n'est pas détecté comme étant rooté.")
         }
 
-        // Vérifie les signatures du firmware
-        if (checkBuildTags()) return true
-
-        return false
+        return isRooted
     }
 }

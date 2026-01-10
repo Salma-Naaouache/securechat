@@ -1,13 +1,19 @@
 package com.student.securechat.ui.chat
 
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffColorFilter
 import android.os.Bundle
 import android.util.Log
+import android.view.LayoutInflater
 import android.view.View
+import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.core.content.ContextCompat
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -30,7 +36,6 @@ class GroupChatActivity : AppCompatActivity() {
     private lateinit var chatContentView: ConstraintLayout
 
     private lateinit var toolbar: Toolbar
-    private lateinit var toolbarTitle: TextView
     private lateinit var rvMessages: RecyclerView
     private lateinit var edtMessage: EditText
     private lateinit var btnSend: ImageButton
@@ -48,7 +53,7 @@ class GroupChatActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_chat) // Réutilisation du layout
+        setContentView(R.layout.activity_chat)
 
         errorView = findViewById(R.id.error_view)
         chatContentView = findViewById(R.id.chat_content_view)
@@ -78,8 +83,17 @@ class GroupChatActivity : AppCompatActivity() {
 
                     db.collection("users").whereIn("userId", chatRoom.participants).get()
                         .addOnSuccessListener { usersSnapshot ->
-                            this.participants = usersSnapshot.toObjects(User::class.java)
-                            this.currentUser = participants.first { it.userId == currentUserId }
+                            this.participants = usersSnapshot.documents.mapNotNull { doc ->
+                                try {
+                                    doc.toObject(User::class.java)?.copy(userId = doc.id)
+                                } catch (e: Exception) {
+                                    Log.e("GroupChatActivity", "Failed to parse user document: ${doc.id}", e)
+                                    null
+                                }
+                            }
+                            
+                            this.currentUser = participants.firstOrNull { it.userId == currentUserId } 
+                                ?: run { showError("Current user not found in participants list."); return@addOnSuccessListener }
 
                             setupToolbar()
                             setupRecyclerView()
@@ -97,6 +111,41 @@ class GroupChatActivity : AppCompatActivity() {
         } catch (e: Exception) {
             showError("A critical error occurred in onCreate", e)
         }
+    }
+
+    private fun setupToolbar() {
+        setSupportActionBar(toolbar)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        supportActionBar?.title = chatRoom.groupName
+        toolbar.setNavigationOnClickListener { onBackPressedDispatcher.onBackPressed() }
+
+        // ✅ SOLUTION DÉFINITIVE: Forcer la couleur de la flèche en blanc
+        toolbar.navigationIcon?.colorFilter = PorterDuffColorFilter(ContextCompat.getColor(this, android.R.color.white), PorterDuff.Mode.SRC_ATOP)
+
+        toolbar.setOnClickListener {
+            showGroupMembers()
+        }
+    }
+
+    private fun showGroupMembers() {
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_group_members, null)
+        val rvMembers = dialogView.findViewById<RecyclerView>(R.id.rvGroupMembers)
+        val btnClose = dialogView.findViewById<Button>(R.id.btnCloseDialog)
+
+        rvMembers.layoutManager = LinearLayoutManager(this)
+        rvMembers.adapter = GroupMemberAdapter(participants)
+
+        val dialog = AlertDialog.Builder(this)
+            .setView(dialogView)
+            .create()
+
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+        btnClose.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialog.show()
     }
 
     private fun sendMessage(content: String) {
@@ -141,11 +190,11 @@ class GroupChatActivity : AppCompatActivity() {
             null
         }
     }
-
+    
     private fun resetUnreadCount() {
         val currentUserId = auth.currentUser?.uid ?: return
         chatRoomId?.let {
-            val unreadCountUpdate = mapOf("unreadCount.$currentUserId" to 0)
+            val unreadCountUpdate = mapOf("unreadCount.$currentUserId" to 0L)
             db.collection("chatRooms").document(it).update(unreadCountUpdate)
         }
     }
@@ -162,17 +211,9 @@ class GroupChatActivity : AppCompatActivity() {
 
     private fun initializeViews() {
         toolbar = findViewById(R.id.toolbarChat)
-        toolbarTitle = findViewById(R.id.toolbarChatTitle)
         rvMessages = findViewById(R.id.rvMessages)
         edtMessage = findViewById(R.id.edtMessage)
         btnSend = findViewById(R.id.btnSendMessage)
-    }
-
-    private fun setupToolbar() {
-        setSupportActionBar(toolbar)
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        toolbarTitle.text = chatRoom.groupName
-        toolbar.setNavigationOnClickListener { onBackPressedDispatcher.onBackPressed() }
     }
 
     private fun setupRecyclerView() {

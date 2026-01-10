@@ -125,28 +125,23 @@ class ProfileActivity : AppCompatActivity() {
         currentUserId?.let { userId ->
             Toast.makeText(this, "Upload en cours...", Toast.LENGTH_SHORT).show()
 
-            val fileName = "avatars/${userId}_${UUID.randomUUID()}.jpg"
-            val storageRef = storage.reference.child(fileName)
+            // ✅ CORRIGÉ: Le nom de fichier ne doit pas inclure le chemin du dossier
+            val fileName = "${userId}_${UUID.randomUUID()}.jpg"
+            val storageRef = storage.reference.child("avatars/$fileName") // Le chemin est défini ici
 
             storageRef.putFile(imageUri)
-                .continueWithTask { task ->
-                    if (!task.isSuccessful) {
-                        task.exception?.let {
-                            throw it
-                        }
-                    }
-                    storageRef.downloadUrl
-                }
-                .addOnCompleteListener { task ->
-                    if (task.isSuccessful) {
-                        val downloadUri = task.result
+                .addOnSuccessListener { 
+                    storageRef.downloadUrl.addOnSuccessListener { downloadUri ->
                         val avatarUrl = downloadUri.toString()
                         updateAvatarInFirestore(avatarUrl)
                         loadAvatarWithUri(downloadUri)
                         Toast.makeText(this, "✅ Photo mise à jour !", Toast.LENGTH_SHORT).show()
-                    } else {
-                        Toast.makeText(this, "❌ Erreur: ${task.exception?.message}", Toast.LENGTH_LONG).show()
+                    }.addOnFailureListener { e ->
+                        Toast.makeText(this, "❌ Erreur (récupération URL): ${e.message}", Toast.LENGTH_LONG).show()
                     }
+                }
+                .addOnFailureListener { e ->
+                    Toast.makeText(this, "❌ Erreur (téléversement): ${e.message}", Toast.LENGTH_LONG).show()
                 }
         }
     }

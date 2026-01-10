@@ -53,6 +53,10 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.6.2")//Architecture (MVVM et Cycle de vie)
     implementation("com.github.bumptech.glide:glide:4.16.0")
     annotationProcessor("com.github.bumptech.glide:compiler:4.16.0")
+    
+    // ✅ AJOUT DE LA LIBRAIRIE ROOTBEER
+    implementation("com.scottyab:rootbeer-lib:0.1.0")
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)

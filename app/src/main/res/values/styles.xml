@@ -18,10 +18,16 @@
         <item name="android:background">#E0E0E0</item>
     </style>
 
-    <!-- ✅ STYLE AJOUTÉ POUR L'IMAGE DE PROFIL CIRCULAIRE -->
     <style name="ShapeAppearance.App.CircleImageView" parent="">
         <item name="cornerFamily">rounded</item>
         <item name="cornerSize">50%</item>
+    </style>
+
+    <!-- ✅ CORRIGÉ: Utilisation d'une police standard -->
+    <style name="FunkyTitleStyle" parent="@android:style/TextAppearance.Medium">
+        <item name="android:fontFamily">serif</item>
+        <item name="android:textSize">28sp</item>
+        <item name="android:textStyle">bold</item>
     </style>
 
 </resources>
